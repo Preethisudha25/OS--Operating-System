@@ -1,0 +1,143 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_BLOCKS 10
+#define MAX_PROCESSES 5
+
+int memory[MAX_BLOCKS];  
+int block_sizes[MAX_BLOCKS] = {100, 500, 200, 300, 600, 700, 800, 400, 900, 150}; // Sizes of blocks
+int process_sizes[MAX_PROCESSES] = {212, 417, 112, 426, 500};  // Sizes of processes
+
+void display_memory(int n) {
+    for (int i = 0; i < n; i++) {
+        if (memory[i] == -1) {
+            printf("Block %d: Empty\n", i + 1);
+        } else {
+            printf("Block %d: Allocated to process of size %d\n", i + 1, memory[i]);
+        }
+    }
+    printf("\n");
+}
+
+void first_fit(int n_processes) {
+    for (int i = 0; i < n_processes; i++) {
+        int allocated = 0;
+        for (int j = 0; j < MAX_BLOCKS; j++) {
+            if (memory[j] == -1 && block_sizes[j] >= process_sizes[i]) {
+                memory[j] = process_sizes[i];
+                allocated = 1;
+                printf("Process of size %d allocated to block %d\n", process_sizes[i], j + 1);
+                break;
+            }
+        }
+        if (!allocated) {
+            printf("Process of size %d could not be allocated\n", process_sizes[i]);
+        }
+    }
+    display_memory(MAX_BLOCKS);
+}
+
+void best_fit(int n_processes) {
+    for (int i = 0; i < n_processes; i++) {
+        int min_diff = __INT_MAX__;
+        int best_block = -1;
+        for (int j = 0; j < MAX_BLOCKS; j++) {
+            if (memory[j] == -1 && block_sizes[j] >= process_sizes[i]) {
+                int diff = block_sizes[j] - process_sizes[i];
+                if (diff < min_diff) {
+                    min_diff = diff;
+                    best_block = j;
+                }
+            }
+        }
+        if (best_block != -1) {
+            memory[best_block] = process_sizes[i];
+            printf("Process of size %d allocated to block %d\n", process_sizes[i], best_block + 1);
+        } else {
+            printf("Process of size %d could not be allocated\n", process_sizes[i]);
+        }
+    }
+    display_memory(MAX_BLOCKS);
+}
+
+void worst_fit(int n_processes) {
+    for (int i = 0; i < n_processes; i++) {
+        int max_diff = -1;
+        int worst_block = -1;
+        for (int j = 0; j < MAX_BLOCKS; j++) {
+            if (memory[j] == -1 && block_sizes[j] >= process_sizes[i]) {
+                int diff = block_sizes[j] - process_sizes[i];
+                if (diff > max_diff) {
+                    max_diff = diff;
+                    worst_block = j;
+                }
+            }
+        }
+        if (worst_block != -1) {
+            memory[worst_block] = process_sizes[i];
+            printf("Process of size %d allocated to block %d\n", process_sizes[i], worst_block + 1);
+        } else {
+            printf("Process of size %d could not be allocated\n", process_sizes[i]);
+        }
+    }
+    display_memory(MAX_BLOCKS);
+}
+
+void deallocate_memory(int process_id) {
+    for (int i = 0; i < MAX_BLOCKS; i++) {
+        if (memory[i] == process_sizes[process_id]) {
+            memory[i] = -1;
+            printf("Process of size %d deallocated from block %d\n", process_sizes[process_id], i + 1);
+            break;
+        }
+    }
+    display_memory(MAX_BLOCKS);
+}
+
+int main() {
+    for (int i = 0; i < MAX_BLOCKS; i++) {
+        memory[i] = -1;  // Initialize all blocks as empty
+    }
+
+    int choice;
+    int process_count = 5;
+
+    while (1) {
+        printf("Memory Allocation Strategies\n");
+        printf("1. First Fit\n");
+        printf("2. Best Fit\n");
+        printf("3. Worst Fit\n");
+        printf("4. Deallocate Memory\n");
+        printf("5. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                first_fit(process_count);
+                break;
+            case 2:
+                best_fit(process_count);
+                break;
+            case 3:
+                worst_fit(process_count);
+                break;
+            case 4:
+                printf("Enter the process ID to deallocate (0 to 4): ");
+                int pid;
+                scanf("%d", &pid);
+                if (pid >= 0 && pid < process_count) {
+                    deallocate_memory(pid);
+                } else {
+                    printf("Invalid process ID!\n");
+                }
+                break;
+            case 5:
+                exit(0);
+            default:
+                printf("Invalid choice!\n");
+        }
+    }
+
+    return 0;
+}
