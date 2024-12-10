@@ -1,0 +1,216 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_NAME_LENGTH 100
+#define FILE_NAME "employee_details.dat"
+
+typedef struct {
+    int id;
+    char name[MAX_NAME_LENGTH];
+    float salary;
+} Employee;
+
+void add_employee();
+void display_employee(int id);
+void modify_employee(int id);
+void delete_employee(int id);
+void list_all_employees();
+int find_employee_offset(int id);
+
+int main() {
+    int choice, id;
+
+    while (1) {
+        printf("\nEmployee Management System (Random Access File)\n");
+        printf("1. Add Employee\n");
+        printf("2. Display Employee Details\n");
+        printf("3. Modify Employee Details\n");
+        printf("4. Delete Employee\n");
+        printf("5. List All Employees\n");
+        printf("6. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        getchar();
+
+        switch (choice) {
+            case 1:
+                add_employee();
+                break;
+            case 2:
+                printf("Enter Employee ID to display: ");
+                scanf("%d", &id);
+                display_employee(id);
+                break;
+            case 3:
+                printf("Enter Employee ID to modify: ");
+                scanf("%d", &id);
+                modify_employee(id);
+                break;
+            case 4:
+                printf("Enter Employee ID to delete: ");
+                scanf("%d", &id);
+                delete_employee(id);
+                break;
+            case 5:
+                list_all_employees();
+                break;
+            case 6:
+                printf("Exiting program.\n");
+                exit(0);
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    }
+
+    return 0;
+}
+
+void add_employee() {
+    FILE *file = fopen(FILE_NAME, "ab");
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+
+    Employee emp;
+    printf("Enter Employee ID: ");
+    scanf("%d", &emp.id);
+    getchar();
+
+    printf("Enter Employee Name: ");
+    fgets(emp.name, MAX_NAME_LENGTH, stdin);
+    emp.name[strcspn(emp.name, "\n")] = '\0';
+
+    printf("Enter Employee Salary: ");
+    scanf("%f", &emp.salary);
+
+    fwrite(&emp, sizeof(Employee), 1, file);
+    printf("Employee added successfully.\n");
+
+    fclose(file);
+}
+
+void display_employee(int id) {
+    FILE *file = fopen(FILE_NAME, "rb");
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+
+    Employee emp;
+    int offset = find_employee_offset(id);
+    if (offset == -1) {
+        printf("Employee with ID %d not found.\n", id);
+        fclose(file);
+        return;
+    }
+
+    fseek(file, offset, SEEK_SET);
+    fread(&emp, sizeof(Employee), 1, file);
+
+    printf("Employee ID: %d\n", emp.id);
+    printf("Employee Name: %s\n", emp.name);
+    printf("Employee Salary: %.2f\n", emp.salary);
+
+    fclose(file);
+}
+
+void modify_employee(int id) {
+    FILE *file = fopen(FILE_NAME, "r+b");
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+
+    Employee emp;
+    int offset = find_employee_offset(id);
+    if (offset == -1) {
+        printf("Employee with ID %d not found.\n", id);
+        fclose(file);
+        return;
+    }
+
+    fseek(file, offset, SEEK_SET);
+    fread(&emp, sizeof(Employee), 1, file);
+
+    printf("Modify Employee Details (Current Data: ID: %d, Name: %s, Salary: %.2f)\n", emp.id, emp.name, emp.salary);
+
+    printf("Enter New Name: ");
+    getchar();
+    fgets(emp.name, MAX_NAME_LENGTH, stdin);
+    emp.name[strcspn(emp.name, "\n")] = '\0';
+
+    printf("Enter New Salary: ");
+    scanf("%f", &emp.salary);
+
+    fseek(file, offset, SEEK_SET);
+    fwrite(&emp, sizeof(Employee), 1, file);
+    printf("Employee details updated successfully.\n");
+
+    fclose(file);
+}
+
+void delete_employee(int id) {
+    FILE *file = fopen(FILE_NAME, "r+b");
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+
+    Employee emp;
+    int offset = find_employee_offset(id);
+    if (offset == -1) {
+        printf("Employee with ID %d not found.\n", id);
+        fclose(file);
+        return;
+    }
+
+    fseek(file, offset, SEEK_SET);
+    fread(&emp, sizeof(Employee), 1, file);
+
+    emp.id = -1;
+    fseek(file, offset, SEEK_SET);
+    fwrite(&emp, sizeof(Employee), 1, file);
+    printf("Employee with ID %d marked as deleted.\n", id);
+
+    fclose(file);
+}
+
+void list_all_employees() {
+    FILE *file = fopen(FILE_NAME, "rb");
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+
+    Employee emp;
+    printf("Listing all employees:\n");
+    while (fread(&emp, sizeof(Employee), 1, file)) {
+        if (emp.id != -1) {
+            printf("ID: %d, Name: %s, Salary: %.2f\n", emp.id, emp.name, emp.salary);
+        }
+    }
+
+    fclose(file);
+}
+
+int find_employee_offset(int id) {
+    FILE *file = fopen(FILE_NAME, "rb");
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return -1;
+    }
+
+    Employee emp;
+    int offset = -1;
+    while (fread(&emp, sizeof(Employee), 1, file)) {
+        if (emp.id == id && emp.id != -1) {
+            offset = ftell(file) - sizeof(Employee);
+            break;
+        }
+    }
+
+    fclose(file);
+    return offset;
+}
