@@ -1,0 +1,78 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_BLOCKS 5
+#define MAX_RECORDS 3
+
+typedef struct {
+    char data[100];
+} DataBlock;
+
+typedef struct {
+    int data_block_index;
+} IndexBlock;
+
+void initialize_file(DataBlock file[], IndexBlock index[], int *current_size) {
+    for (int i = 0; i < MAX_BLOCKS; i++) {
+        file[i].data[0] = '\0';
+    }
+    for (int i = 0; i < MAX_BLOCKS; i++) {
+        index[i].data_block_index = -1;
+    }
+    *current_size = 0;
+}
+
+void add_record(DataBlock file[], IndexBlock index[], int *current_size, const char *data) {
+    if (*current_size >= MAX_BLOCKS) {
+        printf("File is full! Cannot add more records.\n");
+        return;
+    }
+
+    int block_index = *current_size;
+    strncpy(file[block_index].data, data, sizeof(file[block_index].data) - 1);
+    index[*current_size].data_block_index = block_index;
+
+    (*current_size)++;
+}
+
+void access_record(DataBlock file[], IndexBlock index[], int current_size, int record_id) {
+    if (record_id >= current_size) {
+        printf("Record not found!\n");
+        return;
+    }
+    
+    int block_index = index[record_id].data_block_index;
+    printf("Record %d: %s\n", record_id, file[block_index].data);
+}
+
+void display_file(DataBlock file[], IndexBlock index[], int current_size) {
+    if (current_size == 0) {
+        printf("File is empty!\n");
+        return;
+    }
+
+    printf("File contents:\n");
+    for (int i = 0; i < current_size; i++) {
+        int block_index = index[i].data_block_index;
+        printf("Record %d: %s\n", i, file[block_index].data);
+    }
+}
+
+int main() {
+    DataBlock file[MAX_BLOCKS];
+    IndexBlock index[MAX_BLOCKS];
+    int current_size = 0;
+
+    initialize_file(file, index, &current_size);
+
+    add_record(file, index, &current_size, "Record 1 data");
+    add_record(file, index, &current_size, "Record 2 data");
+    add_record(file, index, &current_size, "Record 3 data");
+
+    display_file(file, index, current_size);
+
+    access_record(file, index, current_size, 1);
+    access_record(file, index, current_size, 2);
+
+    return 0;
+}
