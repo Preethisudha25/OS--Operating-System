@@ -1,0 +1,161 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#define MAX_PATH_LENGTH 256
+#define ROOT_DIRECTORY "./root"
+
+void create_root_directory() {
+    if (mkdir(ROOT_DIRECTORY, 0777) == 0) {
+        printf("Root directory created successfully.\n");
+    } else {
+        printf("Root directory already exists or error creating directory.\n");
+    }
+}
+
+void create_subdirectory(const char *subdir_name) {
+    char subdir_path[MAX_PATH_LENGTH];
+    snprintf(subdir_path, sizeof(subdir_path), "%s/%s", ROOT_DIRECTORY, subdir_name);
+
+    if (mkdir(subdir_path, 0777) == 0) {
+        printf("Subdirectory '%s' created successfully.\n", subdir_name);
+    } else {
+        printf("Error creating subdirectory '%s'. It might already exist.\n", subdir_name);
+    }
+}
+
+void list_files_in_subdirectory(const char *subdir_name) {
+    char subdir_path[MAX_PATH_LENGTH];
+    DIR *dir;
+    struct dirent *entry;
+
+    snprintf(subdir_path, sizeof(subdir_path), "%s/%s", ROOT_DIRECTORY, subdir_name);
+    dir = opendir(subdir_path);
+
+    if (dir == NULL) {
+        printf("Failed to open subdirectory '%s'.\n", subdir_name);
+        return;
+    }
+
+    printf("Listing files in subdirectory '%s':\n", subdir_name);
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            printf("%s\n", entry->d_name);
+        }
+    }
+
+    closedir(dir);
+}
+
+void create_file_in_subdirectory(const char *subdir_name, const char *file_name) {
+    char file_path[MAX_PATH_LENGTH];
+    FILE *file;
+
+    snprintf(file_path, sizeof(file_path), "%s/%s/%s", ROOT_DIRECTORY, subdir_name, file_name);
+    file = fopen(file_path, "w");
+
+    if (file != NULL) {
+        printf("File '%s' created successfully in subdirectory '%s'.\n", file_name, subdir_name);
+        fclose(file);
+    } else {
+        printf("Error creating file '%s' in subdirectory '%s'.\n", file_name, subdir_name);
+    }
+}
+
+void delete_file_in_subdirectory(const char *subdir_name, const char *file_name) {
+    char file_path[MAX_PATH_LENGTH];
+    int result;
+
+    snprintf(file_path, sizeof(file_path), "%s/%s/%s", ROOT_DIRECTORY, subdir_name, file_name);
+    result = remove(file_path);
+
+    if (result == 0) {
+        printf("File '%s' deleted successfully from subdirectory '%s'.\n", file_name, subdir_name);
+    } else {
+        printf("Error deleting file '%s' from subdirectory '%s'.\n", file_name, subdir_name);
+    }
+}
+
+void delete_subdirectory(const char *subdir_name) {
+    char subdir_path[MAX_PATH_LENGTH];
+    int result;
+
+    snprintf(subdir_path, sizeof(subdir_path), "%s/%s", ROOT_DIRECTORY, subdir_name);
+    result = rmdir(subdir_path);
+
+    if (result == 0) {
+        printf("Subdirectory '%s' deleted successfully.\n", subdir_name);
+    } else {
+        printf("Error deleting subdirectory '%s'. It might not be empty.\n", subdir_name);
+    }
+}
+
+int main() {
+    int choice;
+    char subdir_name[MAX_PATH_LENGTH];
+    char file_name[MAX_PATH_LENGTH];
+
+    create_root_directory();
+
+    while (1) {
+        printf("\n--- File Management System (Two-Level Directory) ---\n");
+        printf("1. Create Subdirectory\n");
+        printf("2. List Files in Subdirectory\n");
+        printf("3. Create File in Subdirectory\n");
+        printf("4. Delete File from Subdirectory\n");
+        printf("5. Delete Subdirectory\n");
+        printf("6. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        getchar();
+
+        switch (choice) {
+            case 1:
+                printf("Enter subdirectory name to create: ");
+                fgets(subdir_name, sizeof(subdir_name), stdin);
+                subdir_name[strcspn(subdir_name, "\n")] = '\0';
+                create_subdirectory(subdir_name);
+                break;
+            case 2:
+                printf("Enter subdirectory name to list files: ");
+                fgets(subdir_name, sizeof(subdir_name), stdin);
+                subdir_name[strcspn(subdir_name, "\n")] = '\0';
+                list_files_in_subdirectory(subdir_name);
+                break;
+            case 3:
+                printf("Enter subdirectory name to create a file: ");
+                fgets(subdir_name, sizeof(subdir_name), stdin);
+                subdir_name[strcspn(subdir_name, "\n")] = '\0';
+                printf("Enter file name to create: ");
+                fgets(file_name, sizeof(file_name), stdin);
+                file_name[strcspn(file_name, "\n")] = '\0';
+                create_file_in_subdirectory(subdir_name, file_name);
+                break;
+            case 4:
+                printf("Enter subdirectory name to delete a file from: ");
+                fgets(subdir_name, sizeof(subdir_name), stdin);
+                subdir_name[strcspn(subdir_name, "\n")] = '\0';
+                printf("Enter file name to delete: ");
+                fgets(file_name, sizeof(file_name), stdin);
+                file_name[strcspn(file_name, "\n")] = '\0';
+                delete_file_in_subdirectory(subdir_name, file_name);
+                break;
+            case 5:
+                printf("Enter subdirectory name to delete: ");
+                fgets(subdir_name, sizeof(subdir_name), stdin);
+                subdir_name[strcspn(subdir_name, "\n")] = '\0';
+                delete_subdirectory(subdir_name);
+                break;
+            case 6:
+                printf("Exiting program.\n");
+                exit(0);
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    }
+
+    return 0;
+}
