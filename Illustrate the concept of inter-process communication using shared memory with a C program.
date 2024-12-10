@@ -1,0 +1,79 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/types.h>
+#include <string.h>
+
+#define SHM_SIZE 1024
+#define SHM_KEY 12345
+
+struct shared_data {
+    int data;
+    int is_data_available;
+};
+
+void producer() {
+    int shmid;
+    struct shared_data *shm_ptr;
+    shmid = shmget(SHM_KEY, SHM_SIZE, IPC_CREAT | 0666);
+    if (shmid == -1) {
+        perror("shmget failed");
+        exit(1);
+    }
+    shm_ptr = (struct shared_data *) shmat(shmid, NULL, 0);
+    if (shm_ptr == (struct shared_data *) -1) {
+        perror("shmat failed");
+        exit(1);
+    }
+    for (int i = 0; i < 5; i++) {
+        printf("Producer: Writing data %d\n", i + 1);
+        shm_ptr->data = i + 1;
+        shm_ptr->is_data_available = 1;
+        sleep(1);
+    }
+    shmdt(shm_ptr);
+}
+
+void consumer() {
+    int shmid;
+    struct shared_data *shm_ptr;
+    shmid = shmget(SHM_KEY, SHM_SIZE, 0666);
+    if (shmid == -1) {
+        perror("shmget failed");
+        exit(1);
+    }
+    shm_ptr = (struct shared_data *) shmat(shmid, NULL, 0);
+    if (shm_ptr == (struct shared_data *) -1) {
+        perror("shmat failed");
+        exit(1);
+    }
+    for (int i = 0; i < 5; i++) {
+        while (shm_ptr->is_data_available == 0) {
+            sleep(1);
+        }
+        printf("Consumer: Reading data %d\n", shm_ptr->data);
+        shm_ptr->is_data_available = 0;
+        sleep(1);
+    }
+    shmdt(shm_ptr);
+}
+
+int main() {
+    pid_t pid;
+    pid = fork();
+    if (pid < 0) {
+        perror("Fork failed");
+        exit(1);
+    }
+    if (pid == 0) {
+        consumer();
+    } else {
+        producer();
+        wait(NULL);
+        int shmid = shmget(SHM_KEY, SHM_SIZE, 0666);
+        shmctl(shmid, IPC_RMID, NULL);
+    }
+    return 0;
+}
