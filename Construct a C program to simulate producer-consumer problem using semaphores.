@@ -1,0 +1,49 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+#define BUFFER_SIZE 5
+#define NUM_PRODUCERS 2
+#define NUM_CONSUMERS 2
+
+int buffer[BUFFER_SIZE];
+int in = 0;
+int out = 0;
+
+sem_t empty_slots;
+sem_t full_slots;
+sem_t mutex;
+
+void* producer(void* param) {
+    int item;
+    while (1) {
+        item = rand() % 100;
+
+        sem_wait(&empty_slots);
+        sem_wait(&mutex);
+        
+        buffer[in] = item;
+        printf("Producer produced item: %d at index %d\n", item, in);
+
+        in = (in + 1) % BUFFER_SIZE;
+
+        sem_post(&mutex);
+        sem_post(&full_slots);
+
+        sleep(1);
+    }
+    return NULL;
+}
+
+void* consumer(void* param) {
+    int item;
+    while (1) {
+        sem_wait(&full_slots);
+        sem_wait(&mutex);
+
+        item = buffer[out];
+        printf("Consumer consumed item: %d from index %d\n", item, out);
+
+        out = (out + 1) % BUF
