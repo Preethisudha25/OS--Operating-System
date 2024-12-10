@@ -1,0 +1,79 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_BLOCKS 5
+
+typedef struct Block {
+    char data[100];
+    struct Block* next;
+} Block;
+
+typedef struct File {
+    Block* first;
+    Block* last;
+} File;
+
+void initialize_file(File* file) {
+    file->first = NULL;
+    file->last = NULL;
+}
+
+void add_block(File* file, const char* data) {
+    Block* new_block = (Block*)malloc(sizeof(Block));
+    strncpy(new_block->data, data, sizeof(new_block->data) - 1);
+    new_block->next = NULL;
+
+    if (file->last == NULL) {
+        file->first = new_block;
+        file->last = new_block;
+    } else {
+        file->last->next = new_block;
+        file->last = new_block;
+    }
+
+    printf("Block added with data: %s\n", data);
+}
+
+void access_file(File* file) {
+    if (file->first == NULL) {
+        printf("File is empty!\n");
+        return;
+    }
+
+    Block* current = file->first;
+    printf("File contents:\n");
+    while (current != NULL) {
+        printf("%s\n", current->data);
+        current = current->next;
+    }
+}
+
+void free_file(File* file) {
+    Block* current = file->first;
+    Block* next_block;
+    
+    while (current != NULL) {
+        next_block = current->next;
+        free(current);
+        current = next_block;
+    }
+    
+    file->first = NULL;
+    file->last = NULL;
+}
+
+int main() {
+    File file;
+    initialize_file(&file);
+
+    add_block(&file, "First block data");
+    add_block(&file, "Second block data");
+    add_block(&file, "Third block data");
+
+    access_file(&file);
+
+    free_file(&file);
+
+    return 0;
+}
