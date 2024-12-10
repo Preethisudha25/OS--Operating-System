@@ -1,0 +1,63 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+void cscanDiskScheduling(int diskSize, int head, int requests[], int n) {
+    int totalSeekTime = 0;
+    int currentPosition = head;
+    int direction = 1;
+    int left[n], right[n];
+    int leftCount = 0, rightCount = 0;
+    
+    for (int i = 0; i < n; i++) {
+        if (requests[i] < head) {
+            left[leftCount++] = requests[i];
+        } else {
+            right[rightCount++] = requests[i];
+        }
+    }
+
+    qsort(left, leftCount, sizeof(int), compare);
+    qsort(right, rightCount, sizeof(int), compare);
+
+    for (int i = 0; i < rightCount; i++) {
+        totalSeekTime += abs(right[i] - currentPosition);
+        currentPosition = right[i];
+    }
+
+    totalSeekTime += abs(diskSize - 1 - currentPosition);
+    currentPosition = 0;
+
+    for (int i = leftCount - 1; i >= 0; i--) {
+        totalSeekTime += abs(left[i] - currentPosition);
+        currentPosition = left[i];
+    }
+
+    printf("\nTotal Seek Time: %d\n", totalSeekTime);
+    printf("Average Seek Time: %.2f\n", (float)totalSeekTime / n);
+}
+
+int compare(const void *a, const void *b) {
+    return (*(int *)a - *(int *)b);
+}
+
+int main() {
+    int diskSize, head, n;
+    
+    printf("Enter the total number of tracks in the disk: ");
+    scanf("%d", &diskSize);
+    printf("Enter the initial position of the disk head: ");
+    scanf("%d", &head);
+    
+    printf("Enter the number of requests: ");
+    scanf("%d", &n);
+    
+    int requests[n];
+    printf("Enter the track numbers of the requests:\n");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &requests[i]);
+    }
+    
+    cscanDiskScheduling(diskSize, head, requests, n);
+    
+    return 0;
+}
