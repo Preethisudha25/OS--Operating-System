@@ -1,0 +1,65 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_RECORDS 5
+
+typedef struct {
+    int record_id;
+    char data[100];
+} Record;
+
+void add_record(Record file[], int *current_size, int id, const char *data) {
+    if (*current_size >= MAX_RECORDS) {
+        printf("File is full! Cannot add more records.\n");
+        return;
+    }
+
+    file[*current_size].record_id = id;
+    strncpy(file[*current_size].data, data, sizeof(file[*current_size].data) - 1);
+    (*current_size)++;
+    printf("Record added: ID = %d, Data = %s\n", id, data);
+}
+
+void access_record(Record file[], int current_size, int id) {
+    int found = 0;
+
+    for (int i = 0; i < current_size; i++) {
+        if (file[i].record_id == id) {
+            printf("Record found: ID = %d, Data = %s\n", file[i].record_id, file[i].data);
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found) {
+        printf("Record with ID = %d not found!\n", id);
+    }
+}
+
+void display_file(Record file[], int current_size) {
+    if (current_size == 0) {
+        printf("File is empty!\n");
+        return;
+    }
+
+    printf("File contents:\n");
+    for (int i = 0; i < current_size; i++) {
+        printf("ID = %d, Data = %s\n", file[i].record_id, file[i].data);
+    }
+}
+
+int main() {
+    Record file[MAX_RECORDS];
+    int current_size = 0;
+
+    add_record(file, &current_size, 1, "First record data");
+    add_record(file, &current_size, 2, "Second record data");
+    add_record(file, &current_size, 3, "Third record data");
+
+    display_file(file, current_size);
+
+    access_record(file, current_size, 2);
+    access_record(file, current_size, 4);
+
+    return 0;
+}
